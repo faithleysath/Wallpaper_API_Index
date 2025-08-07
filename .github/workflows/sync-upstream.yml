@@ -1,0 +1,50 @@
+# 工作流名称
+name: Sync Upstream Fork
+
+# 触发条件
+on:
+  schedule:
+    - cron: '0 * * * *' # 每小时执行一次
+  workflow_dispatch: # 允许手动触发
+
+# 任务
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 步骤 1: 检出你的仓库代码
+      - name: Checkout Fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # 步骤 2: 使用 rebase 同步上游仓库
+      - name: Sync Upstream using Rebase
+        run: |
+          # ----------------- 重要：修改这里 ----------------- #
+          # 将下面的 URL 替换成你 fork 的那个原始仓库的 URL
+          UPSTREAM_URL="https://github.com/IntelliMarkets/Wallpaper_API_Index.git"
+          # --------------------------------------------------- #
+          
+          # 设置 Git 用户信息
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # 1. 添加上游仓库
+          git remote add upstream $UPSTREAM_URL
+          
+          # 2. 从上游拉取最新代码
+          git fetch upstream
+          
+          # 3. 切换到你的 main 分支 (如果你的主分支是 master，请改为 master)
+          git checkout main
+          
+          # 4. 将你的提交变基到上游的 main 分支之上
+          #    这会保留你自己的提交（比如 workflow 文件）
+          git rebase upstream/main
+          
+          # 5. 强制推送到你的仓库
+          #    因为 rebase 修改了历史，所以必须使用 --force
+          git push origin main --force
